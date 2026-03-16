@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Panel - Free Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-yellow: #FFD700;
+            --dark-blue: #1A237E;
+            --white: #FFFFFF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        #map { width: 100%; height: 100vh; position: absolute; z-index: 1; }
+
+        /* Floating UI Elements */
+        .top-status {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 90%; background: var(--white);
+            padding: 12px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .bottom-card {
+            position: absolute; bottom: 0; width: 100%;
+            background: var(--white); z-index: 1000;
+            padding: 20px; border-radius: 25px 25px 0 0;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn {
+            flex: 1; padding: 12px; border-radius: 10px; text-align: center;
+            text-decoration: none; font-weight: 600; font-size: 14px; color: white;
+        }
+        .btn-call { background: var(--dark-blue); }
+        .btn-sos { background: #d32f2f; }
+        
+        /* Marker Style */
+        .bus-icon-div {
+            background: var(--primary-yellow);
+            border: 2px solid var(--dark-blue);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div class="top-status">
+        <i class="fas fa-bus" style="color: var(--dark-blue);"></i>
+        <div>
+            <h4 style="font-size: 14px;">St. Mary's School Bus</h4>
+            <p id="live-status" style="font-size: 11px; color: #666;">Connecting to Firebase...</p>
+        </div>
+    </div>
+
+    <div class="bottom-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: var(--dark-blue);">MH-12-AS-99</h2>
+                <p style="font-size: 13px; color: #666;">Driver: Rajesh Kumar</p>
+            </div>
+            <div style="background: var(--primary-yellow); padding: 8px 12px; border-radius: 10px; text-align: center;">
+                <small style="display: block; font-size: 10px;">ETA</small>
+                <b id="eta-text">Live</b>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <a href="tel:9876543210" class="btn btn-call"><i class="fas fa-phone"></i> Call Driver</a>
+            <a href="#" class="btn btn-sos"><i class="fas fa-alert"></i> Emergency</a>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // --- FIREBASE CONFIG (Paste yours here) ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyBbKuWmmCZssyo7INjiCGXYbT_sl2PT8l0",
+  authDomain: "bus-finder-8b068.firebaseapp.com",
+  databaseURL: "https://bus-finder-8b068-default-rtdb.firebaseio.com",
+  projectId: "bus-finder-8b068",
+  storageBucket: "bus-finder-8b068.firebasestorage.app",
+  messagingSenderId: "308118155363",
+  appId: "1:308118155363:web:d508430eb2607a7b684856"
+};
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // --- MAP SETUP (FREE) ---
+        const map = L.map('map', { zoomControl: false }).setView([20.5937, 78.9629], 13);
+        
+        // OpenStreetMap Layers (No Key Required)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Custom Bus Marker
+        const busMarker = L.marker([20.5937, 78.9629]).addTo(map);
+
+        // --- TRACKING LOGIC ---
+        const busID = "bus_1710000000"; // Driver panel wali ID
+
+        db.ref('tracking/' + busID).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.lat) {
+                const newPos = [data.lat, data.lng];
+                
+                // Marker position update
+                busMarker.setLatLng(newPos);
+                map.panTo(newPos);
+
+                document.getElementById('live-status').innerText = "Bus is Moving Live";
+                document.getElementById('live-status').style.color = "green";
+            } else {
+                document.getElementById('live-status').innerText = "Bus is Offline";
+                document.getElementById('live-status').style.color = "red";
+            }
+        });
+    </script>
+</body>
+</html>
