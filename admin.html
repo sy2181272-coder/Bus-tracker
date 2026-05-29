@@ -1,1 +1,80 @@
-    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seekho Admin Mini</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background: #020205; color: #fff; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px; }
+        .card { background: rgba(20,20,30,0.8); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background: #ff0054; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+        #gate { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        input { padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #111; color: #fff; margin-bottom: 10px; width: 250px; display: block; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- Small Gatekeeper -->
+    <div id="gate">
+        <div>
+            <h3 style="text-align:center; margin-bottom:15px;">Admin Login</h3>
+            <input type="password" id="pass" placeholder="Secret Access Key">
+            <button class="btn" style="width:100%; padding:10px; background:#00f5d4; color:#000; font-weight:600;" onclick="check()">Unlock HQ</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <h2>Seekho Backend Logs</h2>
+            <div style="font-size:0.9rem; color:#00f5d4;">Live Feed Active</div>
+        </div>
+        <div id="video-list"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "YOUR_KEY_HERE",
+            authDomain: "YOUR_DOMAIN.firebaseapp.com",
+            databaseURL: "https://YOUR_DB_URL.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function check() {
+            if(document.getElementById('pass').value === "seekho2026") {
+                document.getElementById('gate').style.display = 'none';
+                loadData();
+            } else { alert("Wrong key!"); }
+        }
+
+        function loadData() {
+            db.ref('videos').on('value', snap => {
+                const container = document.getElementById('video-list');
+                container.innerHTML = '';
+                if(!snap.val()) { container.innerHTML = '<p style="color:#8e9aaf;">No active streams found.</p>'; return; }
+                Object.values(snap.val()).forEach(v => {
+                    const item = document.createElement('div'); item.className = 'card';
+                    item.innerHTML = `
+                        <div>
+                            <strong style="font-size:0.95rem;">${v.caption}</strong><br>
+                            <span style="font-size:0.75rem; color:#8e9aaf;">By: @${v.name} | Cat: ${v.category}</span>
+                        </div>
+                        <button class="btn" onclick="purge('${v.videoId}')">Delete</button>`;
+                    container.appendChild(item);
+                });
+            });
+        }
+
+        function purge(id) {
+            if(confirm("Wipe this video?")) db.ref('videos/' + id).remove();
+        }
+    </script>
+</body>
+</html>
